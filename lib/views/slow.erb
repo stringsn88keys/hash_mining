@@ -1,0 +1,71 @@
+<%# This is a (so far) vain attempt to break up the crypto libraries to get them functioning on a gen 1 iPod Touch %>
+<script>
+var n = 0,
+    max = 1000000000;
+    batch = 10000;
+
+var start
+
+var scripts = [
+  "http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/core-min.js",
+  "http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/x64-core-min.js",
+  "http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/enc-utf16-min.js",
+  "http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/enc-base64-min.js",
+  "http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/sha3-min.js"
+];
+
+(function loadScripts() {
+  var script = document.createElement('script');
+  script.src = scripts.shift();
+  document.getElementsByTagName('head')[0].appendChild(script);
+  if(scripts.length <= 0) {
+    setTimeout(nextBatch, 1000000);
+  } else {
+    setTimeout(loadScripts, 10000);
+  }
+})();
+
+
+function logText(el, text) {
+  var p = document.createElement('p');
+  p.innerHTML = text;
+  while (p.children.length > 0) {
+    el.appendChild(p.children[0]);
+  }
+  document.body.appendChild(p);
+}
+
+function logTime() {
+  var current = new Date();
+  logText(document.body, current);
+}
+
+function logHashesPerSecond(n) {
+  var current = new Date();
+  var hps = n / ((current.getTime() - start.getTime()) / 1000.0);
+  logText(document.body, "hashes per second: " + hps);
+}
+
+function nextBatch() {
+    if(n==0) {
+      start = new Date();
+      logTime();
+    }
+    for (var i = 0; i < batch && n < max; ++i, ++n) {
+      var hash = CryptoJS.SHA3("Message" + n, { outputLength: 512 });
+      stringy=CryptoJS.enc.Base64.stringify(hash);
+      if(stringy[0] == '0' && stringy[1] == '0' && stringy[2] == '0') {
+        logHashesPerSecond(n);
+        logText(document.body, stringy + " at :" +n);
+      }
+    }
+    if (n < max) {
+        setTimeout(nextBatch, 0);
+    } else {
+        logText(document.body, 'FINISHED');
+        logTime();
+        var finish = new Date();
+        logText(document.body, finish);
+    }
+};
+</script>
